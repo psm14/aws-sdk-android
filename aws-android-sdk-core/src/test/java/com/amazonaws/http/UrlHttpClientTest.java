@@ -92,7 +92,7 @@ public class UrlHttpClientTest {
     }
 
     @Test
-    public void testConfigureConnectionWithCertCheckingDisabled() throws MalformedURLException {
+    public void testConfigureConnectionWithCertCheckingDisabledDoesntWorkAnymore() throws MalformedURLException {
         HttpsURLConnection conn = new MockHttpURLConnection(new URL("https://www.test.com"));
         System.setProperty(SDKGlobalConfiguration.DISABLE_CERT_CHECKING_SYSTEM_PROPERTY, "true");
         client.configureConnection(conn);
@@ -101,8 +101,8 @@ public class UrlHttpClientTest {
         assertEquals(conn.getReadTimeout(), conf.getSocketTimeout());
         assertFalse(conn.getInstanceFollowRedirects());
         assertFalse("disable cache", conn.getUseCaches());
-        assertTrue(conn.getHostnameVerifier().verify("https://some.bogus.com", null));
-        assertTrue(conn.getHostnameVerifier()
+        assertFalse(conn.getHostnameVerifier().verify("https://some.bogus.com", null));
+        assertFalse(conn.getHostnameVerifier()
                 .verify("https://bucket.withdot.s3.amazonaws.com", null));
         System.clearProperty(SDKGlobalConfiguration.DISABLE_CERT_CHECKING_SYSTEM_PROPERTY);
     }

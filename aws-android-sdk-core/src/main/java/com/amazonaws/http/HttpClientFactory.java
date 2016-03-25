@@ -101,18 +101,6 @@ class HttpClientFactory {
         sr.register(http);
         sr.register(https);
 
-        /*
-         * If SSL cert checking for endpoints has been explicitly disabled,
-         * register a new scheme for HTTPS that won't cause self-signed certs to
-         * error out.
-         */
-        if (System.getProperty(DISABLE_CERT_CHECKING_SYSTEM_PROPERTY) != null) {
-            SSLSocketFactory sf = getTrustAllSSLSocketFactory();
-            sf.setHostnameVerifier(SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
-            Scheme sch = new Scheme("https", sf, 443);
-            httpClient.getConnectionManager().getSchemeRegistry().register(sch);
-        }
-
         /* Set proxy if configured */
         String proxyHost = config.getProxyHost();
         int proxyPort = config.getProxyPort();
@@ -162,73 +150,4 @@ class HttpClientFactory {
             return super.isRedirectRequested(response, context);
         }
     }
-
-    /**
-     * Gets an SSLSocketFactory that bypasses SSL certificate checks.
-     *
-     * @return SSLSocketFactory
-     */
-    private static SSLSocketFactory getTrustAllSSLSocketFactory() {
-        try {
-            KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-            trustStore.load(null, null);
-            SSLSocketFactory sf = new TrustAllSSLSocketFactory(trustStore);
-            return sf;
-        } catch (Exception e) {
-            throw new AmazonClientException("Failed to create trust all socket factory", e);
-        }
-    }
-
-    /**
-     * An SSLSocketFactory that bypasses SSL certificate checks. This class is
-     * only intended to be used for testing purposes.
-     */
-    private static class TrustAllSSLSocketFactory extends SSLSocketFactory {
-        private final SSLContext sslContext;
-
-        public TrustAllSSLSocketFactory(KeyStore keystore) throws NoSuchAlgorithmException,
-                KeyManagementException, KeyStoreException, UnrecoverableKeyException {
-            super(keystore);
-            sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, new TrustManager[] {
-                    new TrustingX509TrustManager()
-            }, null);
-        }
-
-        @Override
-        public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
-                throws IOException, UnknownHostException {
-            return sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
-        }
-
-        @Override
-        public Socket createSocket() throws IOException {
-            return sslContext.getSocketFactory().createSocket();
-        }
-    }
-
-    /**
-     * Simple implementation of X509TrustManager that trusts all certificates.
-     * This class is only intended to be used for testing purposes.
-     */
-    private static class TrustingX509TrustManager implements X509TrustManager {
-        private static final X509Certificate[] X509_CERTIFICATES = new X509Certificate[0];
-
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-            return X509_CERTIFICATES;
-        }
-
-        @Override
-        public void checkServerTrusted(X509Certificate[] chain, String authType)
-                throws CertificateException {
-            // No-op, to trust all certs
-        }
-
-        @Override
-        public void checkClientTrusted(X509Certificate[] chain, String authType)
-                throws CertificateException {
-            // No-op, to trust all certs
-        }
-    };
 }

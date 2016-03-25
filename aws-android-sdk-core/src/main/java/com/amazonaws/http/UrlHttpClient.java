@@ -183,62 +183,8 @@ public class UrlHttpClient implements HttpClient {
         // configure https connection
         if (connection instanceof HttpsURLConnection) {
             HttpsURLConnection https = (HttpsURLConnection) connection;
-
-            // disable cert check
-            if (System.getProperty(DISABLE_CERT_CHECKING_SYSTEM_PROPERTY) != null) {
-                disableCertificateValidation(https);
-            }
         }
     }
 
     private SSLContext sc = null;
-
-    private void disableCertificateValidation(HttpsURLConnection connection) {
-        if (sc == null) {
-            TrustManager[] trustAllCerts = new TrustManager[] {
-                    new TrustAllManager()
-            };
-            try {
-                // Install the all-trusting trust manager
-                sc = SSLContext.getInstance("TLS");
-                sc.init(null, trustAllCerts, null);
-            } catch (GeneralSecurityException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        connection.setSSLSocketFactory(sc.getSocketFactory());
-        connection.setHostnameVerifier(new AllowAllHostnameVerifier());
-    }
-
-    /**
-     * An allow all hostname verifier, only used internally for testing purpose.
-     */
-    static class AllowAllHostnameVerifier implements HostnameVerifier {
-        @Override
-        public boolean verify(String hostname, SSLSession session) {
-            // Always return true to bypass host name verification
-            return true;
-        }
-    }
-
-    /**
-     * A trust all policy manager, only used internally for testing purpose.
-     */
-    static class TrustAllManager implements X509TrustManager {
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-            return null;
-        }
-
-        @Override
-        public void checkClientTrusted(X509Certificate[] certs, String authType) {
-            // No-op, to trust all certs
-        }
-
-        @Override
-        public void checkServerTrusted(X509Certificate[] certs, String authType) {
-            // No-op, to trust all certs
-        }
-    }
 }
